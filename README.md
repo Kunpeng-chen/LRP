@@ -23,6 +23,7 @@ Completed:
 - Deduplication cache
 - Router decision layer
 - Three-node relay simulation
+- MVP basic usage sample
 - Strict unit tests
 - CMake build system
 - GitHub Actions CI
@@ -35,6 +36,7 @@ include/lrp.h
 src/lrp.c
 
 examples/simulated_three_nodes/main.c
+samples/mvp_basic_usage/main.c
 
 tests/test_frame.c
 tests/test_dedup.c
@@ -54,7 +56,10 @@ The first MVP proves this relay path:
 Endpoint A → Relay B → Base Station C → ACK → Relay B → Endpoint A
 ```
 
-The project now contains an in-memory simulation of this complete path.
+The project now contains:
+
+- a complete in-memory relay simulation
+- a minimal application usage sample
 
 ---
 
@@ -175,6 +180,36 @@ PASS: simulated three-node relay path
 
 ---
 
+## Run Basic Usage Sample
+
+After build:
+
+```bash
+./build/sample_mvp_basic_usage
+```
+
+This sample demonstrates:
+
+- application frame creation
+- frame encode/decode
+- relay forwarding
+- ACK generation
+- endpoint ACK receive flow
+
+Expected output:
+
+```text
+Endpoint creates DATA
+Relay forwards DATA
+Base consumes DATA
+Base creates ACK
+Relay forwards ACK
+Endpoint receives ACK
+PASS: MVP basic usage sample
+```
+
+---
+
 ## Documentation
 
 Project documentation:
@@ -213,6 +248,7 @@ Frame Layer        DONE
 Dedup Layer        DONE
 Router Layer       DONE
 Relay Simulation   DONE
+Basic Sample       DONE
 CI                 DONE
 ```
 
