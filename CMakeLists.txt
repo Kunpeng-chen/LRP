@@ -67,3 +67,12 @@ target_link_libraries(simulated_three_nodes
     PRIVATE
         lrp
 )
+
+add_executable(sample_mvp_basic_usage
+    samples/mvp_basic_usage/main.c
+)
+
+target_link_libraries(sample_mvp_basic_usage
+    PRIVATE
+        lrp
+)
