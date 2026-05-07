@@ -10,7 +10,7 @@ LRP is **not LoRaWAN**. It is intended for private LoRa node / relay / base-stat
 
 ## Current Status
 
-The project currently contains the first MVP frame layer implementation.
+The project currently contains a working MVP relay core.
 
 Completed:
 
@@ -18,9 +18,12 @@ Completed:
 - MVP implementation plan
 - Fixed binary frame format
 - Public API headers
-- Core frame encode/decode implementation
+- Frame encode/decode implementation
 - CRC16-CCITT validation
-- Strict frame validation tests
+- Deduplication cache
+- Router decision layer
+- Three-node relay simulation
+- Strict unit tests
 - CMake build system
 - GitHub Actions CI
 
@@ -30,7 +33,13 @@ Current implemented files:
 include/lrp_type.h
 include/lrp.h
 src/lrp.c
+
+examples/simulated_three_nodes/main.c
+
 tests/test_frame.c
+tests/test_dedup.c
+tests/test_router.c
+
 CMakeLists.txt
 .github/workflows/ci.yml
 ```
@@ -39,47 +48,61 @@ CMakeLists.txt
 
 ## MVP Scope
 
-The first MVP is intentionally small.
-
-It focuses on proving this path:
+The first MVP proves this relay path:
 
 ```text
 Endpoint A → Relay B → Base Station C → ACK → Relay B → Endpoint A
 ```
 
-The current completed layer only covers:
-
-```text
-Frame encode/decode + CRC validation
-```
-
-The relay path will be implemented in later steps.
+The project now contains an in-memory simulation of this complete path.
 
 ---
 
-## Implemented Frame Layer
+## Implemented Layers
 
-The current frame layer supports:
+### Frame Layer
+
+Implemented:
 
 - fixed 13-byte header
 - DATA frame
 - ACK frame
-- 16-bit Network ID
-- 16-bit Source Node ID
-- 16-bit Destination Node ID
-- 16-bit sequence number
-- TTL field
-- payload length validation
+- payload validation
 - CRC16-CCITT
 - strict decode validation
+- little-endian encoding
 
-The protocol version is controlled by the core during encoding:
+### Dedup Layer
 
-```c
-out[0] = LRP_VERSION;
+Implemented:
+
+- duplicate suppression cache
+- timeout-based expiration
+- managed flooding protection
+
+Dedup key:
+
+```text
+network_id + src_id + seq + type
 ```
 
-Application code does not control the encoded protocol version.
+### Router Decision Layer
+
+Implemented decisions:
+
+```text
+DROP
+CONSUME
+FORWARD
+```
+
+Router supports:
+
+- network filtering
+- duplicate filtering
+- relay enable/disable
+- TTL decrement on forwarding
+- destination matching
 
 ---
 
@@ -103,66 +126,52 @@ All multi-byte fields are encoded in little-endian format.
 
 ---
 
-## Public API
-
-```c
-#include "lrp.h"
-```
-
-Current API:
-
-```c
-lrp_status_t lrp_frame_encode(
-    const lrp_frame_t *frame,
-    uint8_t *out,
-    uint16_t out_size,
-    uint16_t *out_len
-);
-
-lrp_status_t lrp_frame_decode(
-    const uint8_t *data,
-    uint16_t len,
-    lrp_frame_t *out
-);
-
-uint16_t lrp_crc16_ccitt(
-    const uint8_t *data,
-    uint16_t len
-);
-```
-
----
-
-## Build and Test
+## Build
 
 This project uses CMake.
 
 ```bash
 cmake -S . -B build
 cmake --build build
-ctest --test-dir build --output-on-failure
-```
-
-Expected successful test output includes:
-
-```text
-PASS: frame layer strict validation
 ```
 
 ---
 
-## Current Tests
+## Run Tests
 
-The current strict frame tests cover:
+```bash
+ctest --test-dir build --output-on-failure
+```
 
-- DATA encode/decode symmetry
-- ACK encode/decode with zero payload
-- CRC error rejection
-- invalid version rejection
-- invalid flags rejection
-- invalid length rejection
-- output buffer too small rejection
-- invalid packet type rejection
+Current test targets:
+
+```text
+frame_layer_strict_validation
+dedup_layer_strict_validation
+router_layer_strict_validation
+```
+
+---
+
+## Run MVP Relay Simulation
+
+After build:
+
+```bash
+./build/simulated_three_nodes
+```
+
+Expected output:
+
+```text
+Endpoint A sends DATA
+Relay B forwards DATA
+Base C consumes DATA
+Base C sends ACK
+Relay B forwards ACK
+Endpoint A receives ACK
+PASS: simulated three-node relay path
+```
 
 ---
 
@@ -177,45 +186,34 @@ docs/relay-algorithm.md
 docs/mvp.md
 ```
 
-These documents define the protocol direction, MVP boundary, frame format, and relay algorithm plan.
-
 ---
 
 ## Not Implemented Yet
 
 The following features are intentionally not implemented yet:
 
-- duplicate suppression
-- router decision logic
-- relay forwarding
-- end-to-end ACK flow
-- random relay delay
+- randomized relay delay
 - radio abstraction
 - SX1262 / SX1276 / LLCC68 integration
 - encryption / MIC
 - dynamic routing
+- mesh routing metrics
 - Meshtastic compatibility
 - LoRaWAN compatibility
+- real RF transmission
 
 ---
 
-## Next Steps
+## Current MVP Status
 
-Recommended next implementation order:
-
-```text
-1. Dedup cache
-2. Router decision function
-3. Three-node in-memory simulation
-4. End-to-end ACK flow
-5. Radio abstraction interface
-6. Hardware port
-```
-
-The next immediate module should be:
+Current status:
 
 ```text
-dedup
+Frame Layer        DONE
+Dedup Layer        DONE
+Router Layer       DONE
+Relay Simulation   DONE
+CI                 DONE
 ```
 
-because duplicate suppression is required before managed flooding and relay forwarding can be safely implemented.
+The repository now contains a complete minimal relay protocol MVP core.
