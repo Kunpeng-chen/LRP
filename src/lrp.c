@@ -85,7 +85,7 @@ lrp_status_t lrp_frame_encode(
         return LRP_ERR_BUFFER_TOO_SMALL;
     }
 
-    out[0] = frame->version;
+    out[0] = LRP_VERSION;
     out[1] = frame->flags;
     out[2] = frame->type;
     out[3] = frame->ttl;
