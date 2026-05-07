@@ -36,3 +36,14 @@ target_link_libraries(test_frame
 )
 
 add_test(NAME frame_layer_strict_validation COMMAND test_frame)
+
+add_executable(test_dedup
+    tests/test_dedup.c
+)
+
+target_link_libraries(test_dedup
+    PRIVATE
+        lrp
+)
+
+add_test(NAME dedup_layer_strict_validation COMMAND test_dedup)
