@@ -2,6 +2,7 @@
 #define LRP_TYPE_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -13,6 +14,9 @@ extern "C" {
 #define LRP_CRC_SIZE             2u
 #define LRP_MAX_PAYLOAD_SIZE     64u
 #define LRP_MAX_FRAME_SIZE       (LRP_HEADER_SIZE + LRP_MAX_PAYLOAD_SIZE + LRP_CRC_SIZE)
+
+#define LRP_DEDUP_CACHE_SIZE     32u
+#define LRP_DEDUP_TTL_MS         300000u
 
 #define LRP_ADDR_INVALID         0x0000u
 #define LRP_ADDR_BASE            0x0001u
@@ -52,6 +56,19 @@ typedef struct {
     uint8_t payload_len;
     uint8_t payload[LRP_MAX_PAYLOAD_SIZE];
 } lrp_frame_t;
+
+typedef struct {
+    uint16_t network_id;
+    uint16_t src_id;
+    uint16_t seq;
+    uint8_t type;
+    uint32_t timestamp_ms;
+    bool used;
+} lrp_dedup_entry_t;
+
+typedef struct {
+    lrp_dedup_entry_t entries[LRP_DEDUP_CACHE_SIZE];
+} lrp_dedup_cache_t;
 
 #ifdef __cplusplus
 }
