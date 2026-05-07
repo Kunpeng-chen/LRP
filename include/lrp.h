@@ -25,6 +25,16 @@ uint16_t lrp_crc16_ccitt(
     uint16_t len
 );
 
+void lrp_dedup_init(
+    lrp_dedup_cache_t *cache
+);
+
+bool lrp_dedup_check_and_remember(
+    lrp_dedup_cache_t *cache,
+    const lrp_frame_t *frame,
+    uint32_t now_ms
+);
+
 #ifdef __cplusplus
 }
 #endif
