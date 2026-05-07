@@ -44,6 +44,12 @@ typedef enum {
     LRP_TYPE_ACK  = 0x02u
 } lrp_packet_type_t;
 
+typedef enum {
+    LRP_DECISION_DROP = 0,
+    LRP_DECISION_CONSUME,
+    LRP_DECISION_FORWARD
+} lrp_decision_t;
+
 typedef struct {
     uint8_t version;
     uint8_t flags;
@@ -69,6 +75,17 @@ typedef struct {
 typedef struct {
     lrp_dedup_entry_t entries[LRP_DEDUP_CACHE_SIZE];
 } lrp_dedup_cache_t;
+
+typedef struct {
+    uint16_t network_id;
+    uint16_t node_id;
+    bool relay_enabled;
+} lrp_router_config_t;
+
+typedef struct {
+    lrp_router_config_t config;
+    lrp_dedup_cache_t dedup;
+} lrp_router_t;
 
 #ifdef __cplusplus
 }
