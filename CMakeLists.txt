@@ -47,3 +47,14 @@ target_link_libraries(test_dedup
 )
 
 add_test(NAME dedup_layer_strict_validation COMMAND test_dedup)
+
+add_executable(test_router
+    tests/test_router.c
+)
+
+target_link_libraries(test_router
+    PRIVATE
+        lrp
+)
+
+add_test(NAME router_layer_strict_validation COMMAND test_router)
