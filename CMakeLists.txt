@@ -58,3 +58,12 @@ target_link_libraries(test_router
 )
 
 add_test(NAME router_layer_strict_validation COMMAND test_router)
+
+add_executable(simulated_three_nodes
+    examples/simulated_three_nodes/main.c
+)
+
+target_link_libraries(simulated_three_nodes
+    PRIVATE
+        lrp
+)
