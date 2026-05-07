@@ -10,7 +10,9 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
 add_library(lrp STATIC
-    src/lrp.c
+    src/lrp_frame.c
+    src/lrp_dedup.c
+    src/lrp_router.c
 )
 
 target_include_directories(lrp
