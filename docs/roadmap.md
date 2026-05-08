@@ -1,6 +1,6 @@
 # LRP Roadmap
 
-This document defines the next development plan after the MVP relay core.
+This document defines the development plan after the MVP relay core.
 
 The MVP currently provides:
 
@@ -16,6 +16,37 @@ The next goal is to move from an in-memory protocol core to a hardware-ready LoR
 
 ---
 
+## Required CI Feedback Loop for Every Phase
+
+Every phase must end with a CI verification loop.
+
+```text
+Implement change
+    ↓
+Push commit
+    ↓
+Fetch CI result
+    ↓
+If CI passes → phase can close
+If CI fails → inspect logs → fix → push → fetch CI again
+```
+
+A phase is not fully complete unless the latest relevant commit has passing CI.
+
+If CI status cannot be fetched, mark the phase as:
+
+```text
+implementation complete, CI verification pending
+```
+
+Detailed rules are documented in:
+
+```text
+docs/ci-feedback-loop.md
+```
+
+---
+
 ## Phase 1: Stabilize the MVP Core
 
 Goal: make the current MVP clean, maintainable, and ready for extension.
@@ -28,6 +59,8 @@ Tasks:
 4. Add stack architecture documentation.
 5. Keep README concise and external-user oriented.
 6. Add API usage notes for each public header.
+7. Fetch CI result for the latest phase commit.
+8. If CI fails, inspect logs, fix, push, and re-check CI.
 
 Exit criteria:
 
@@ -35,6 +68,7 @@ Exit criteria:
 - `simulated_three_nodes` runs successfully.
 - `sample_mvp_basic_usage` runs successfully.
 - Repository layout matches the layered protocol stack design.
+- Latest phase commit has passing CI, or CI verification is explicitly pending.
 
 ---
 
@@ -68,11 +102,19 @@ bool lrp_radio_send(const uint8_t *data, uint16_t len);
 void lrp_on_radio_rx(const uint8_t *data, uint16_t len, int16_t rssi, int8_t snr);
 ```
 
+CI feedback steps:
+
+1. Fetch CI result after port/radio abstraction commits.
+2. If build fails, inspect failed job logs.
+3. Fix compile, warning, link, or test failures before continuing.
+4. Re-check CI after the fix commit.
+
 Exit criteria:
 
 - Existing simulation still works.
 - A radio stub test can send bytes through encode/decode/router flow.
 - No LoRa chip dependency is introduced into the protocol core.
+- Latest phase commit has passing CI, or CI verification is explicitly pending.
 
 ---
 
@@ -86,6 +128,8 @@ Tasks:
 2. Add configurable base delay and jitter.
 3. Keep router decision pure if possible.
 4. Decide whether delay belongs to router output metadata or a future scheduler layer.
+5. Fetch CI result after implementation.
+6. If CI fails, inspect logs, fix, push, and re-check CI.
 
 Possible design:
 
@@ -101,6 +145,7 @@ Exit criteria:
 - Relay forwarding can return a randomized delay.
 - Tests verify delay range.
 - Current simple router API remains backward compatible or is intentionally upgraded.
+- Latest phase commit has passing CI, or CI verification is explicitly pending.
 
 ---
 
@@ -115,6 +160,8 @@ Tasks:
 3. Match incoming ACK by `src_id`, `dst_id`, `seq`, and `type`.
 4. Add retry counter.
 5. Add ACK timeout handling.
+6. Fetch CI result after implementation.
+7. If CI fails, inspect logs, fix, push, and re-check CI.
 
 Out of scope:
 
@@ -127,6 +174,7 @@ Exit criteria:
 - Endpoint can resend confirmed DATA when ACK timeout occurs.
 - Endpoint stops retrying after max retry count.
 - Duplicate ACKs are ignored safely.
+- Latest phase commit has passing CI, or CI verification is explicitly pending.
 
 ---
 
@@ -148,6 +196,8 @@ Tasks:
 3. Provide a minimal endpoint firmware example.
 4. Provide a minimal relay firmware example.
 5. Provide a minimal base-station firmware example.
+6. Fetch CI result for host-buildable code.
+7. If CI fails, inspect logs, fix, push, and re-check CI.
 
 Exit criteria:
 
@@ -155,6 +205,7 @@ Exit criteria:
 - Relay forwards DATA over real LoRa.
 - Base receives DATA and replies ACK.
 - Endpoint receives ACK.
+- Host-side CI still passes, or CI verification is explicitly pending.
 
 ---
 
@@ -168,6 +219,8 @@ Tasks:
 2. Decide MIC size: 4, 8, or 16 bytes.
 3. Add frame counter or anti-replay strategy.
 4. Keep encryption optional.
+5. Fetch CI result after implementation.
+6. If CI fails, inspect logs, fix, push, and re-check CI.
 
 Recommended direction:
 
@@ -179,6 +232,7 @@ Exit criteria:
 - Invalid MIC packets are rejected.
 - Fake ACK packets can be detected.
 - Security overhead is documented.
+- Latest phase commit has passing CI, or CI verification is explicitly pending.
 
 ---
 
@@ -195,11 +249,18 @@ Possible features:
 - relay health beacons
 - broadcast rate limiting
 
+CI feedback steps:
+
+1. Fetch CI result after each feature.
+2. If CI fails, inspect logs, fix, push, and re-check CI.
+3. Do not start another advanced feature while CI is failing.
+
 Exit criteria:
 
 - Each feature is optional.
 - MVP behavior remains simple and deterministic.
 - Airtime impact is documented.
+- Latest feature commit has passing CI, or CI verification is explicitly pending.
 
 ---
 
@@ -210,9 +271,10 @@ Immediate next steps:
 ```text
 1. Stabilize layered stack cleanup
 2. Add radio / port abstraction
-3. Add randomized relay delay
-4. Add ACK retry logic
-5. Start real hardware port
+3. Fetch CI result and fix any failure
+4. Add randomized relay delay
+5. Add ACK retry logic
+6. Start real hardware port
 ```
 
 Do not start dynamic routing, encryption, or mesh metrics until the radio abstraction and real RF loop are working.
