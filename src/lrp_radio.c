@@ -1,5 +1,7 @@
 #include "lrp_radio.h"
 
+#include <stddef.h>
+
 bool lrp_radio_send(
     const lrp_radio_t *radio,
     const uint8_t *data,
