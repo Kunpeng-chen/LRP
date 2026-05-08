@@ -16,34 +16,65 @@ The next goal is to move from an in-memory protocol core to a hardware-ready LoR
 
 ---
 
-## Required CI Feedback Loop for Every Phase
+## Required PR-Based Development Flow for Every Phase
 
-Every phase must end with a CI verification loop.
+All future phases must be developed through a feature branch and pull request.
 
-```text
-Implement change
-    ↓
-Push commit
-    ↓
-Fetch CI result
-    ↓
-If CI passes → phase can close
-If CI fails → inspect logs → fix → push → fetch CI again
-```
+Do not push phase implementation commits directly to `main`.
 
-A phase is not fully complete unless the latest relevant commit has passing CI.
-
-If CI status cannot be fetched, mark the phase as:
+Required flow:
 
 ```text
-implementation complete, CI verification pending
+Create feature branch
+    ↓
+Implement phase changes
+    ↓
+Push branch
+    ↓
+Open pull request
+    ↓
+Wait for PR CI / checks
+    ↓
+If CI passes → review and merge
+If CI fails → inspect PR workflow logs → fix on same branch → wait for CI again
 ```
 
-Detailed rules are documented in:
+A phase is not complete unless its pull request has passing CI checks before merge.
+
+If CI status cannot be fetched from the PR, mark the phase as:
+
+```text
+implementation complete, PR CI verification pending
+```
+
+Detailed CI rules are documented in:
 
 ```text
 docs/ci-feedback-loop.md
 ```
+
+---
+
+## Required CI Feedback Loop for Every Phase
+
+Every phase must end with a CI verification loop based on the phase pull request.
+
+```text
+Implement change on feature branch
+    ↓
+Push branch
+    ↓
+Open or update PR
+    ↓
+Fetch PR CI result
+    ↓
+If CI passes → phase can close after merge
+If CI fails → inspect logs → fix → push → fetch PR CI again
+```
+
+A phase is not fully complete unless the latest PR head commit has passing CI.
+
+Direct `main` commit status is not the source of truth for phase validation. PR checks are the source of truth.
 
 ---
 
@@ -53,14 +84,15 @@ Goal: make the current MVP clean, maintainable, and ready for extension.
 
 Tasks:
 
-1. Remove obsolete single-file implementation if no longer used.
-2. Ensure CMake builds only layered source files.
-3. Keep all tests passing.
-4. Add stack architecture documentation.
-5. Keep README concise and external-user oriented.
-6. Add API usage notes for each public header.
-7. Fetch CI result for the latest phase commit.
-8. If CI fails, inspect logs, fix, push, and re-check CI.
+1. Create a feature branch for Phase 1 changes.
+2. Remove obsolete single-file implementation if no longer used.
+3. Ensure CMake builds only layered source files.
+4. Keep all tests passing.
+5. Add stack architecture documentation.
+6. Keep README concise and external-user oriented.
+7. Add API usage notes for each public header.
+8. Open a PR and fetch PR CI result.
+9. If CI fails, inspect logs, fix on the same branch, push, and re-check PR CI.
 
 Exit criteria:
 
@@ -68,7 +100,7 @@ Exit criteria:
 - `simulated_three_nodes` runs successfully.
 - `sample_mvp_basic_usage` runs successfully.
 - Repository layout matches the layered protocol stack design.
-- Latest phase commit has passing CI, or CI verification is explicitly pending.
+- Phase PR has passing CI checks before merge, or PR CI verification is explicitly pending.
 
 ---
 
@@ -102,19 +134,21 @@ bool lrp_radio_send(const uint8_t *data, uint16_t len);
 void lrp_on_radio_rx(const uint8_t *data, uint16_t len, int16_t rssi, int8_t snr);
 ```
 
-CI feedback steps:
+Tasks:
 
-1. Fetch CI result after port/radio abstraction commits.
-2. If build fails, inspect failed job logs.
-3. Fix compile, warning, link, or test failures before continuing.
-4. Re-check CI after the fix commit.
+1. Create a `phase-2-radio-port-abstraction` feature branch.
+2. Implement port and radio abstraction.
+3. Add or update tests/samples for the new boundary.
+4. Open a PR.
+5. Fetch PR CI result.
+6. If CI fails, inspect failed job logs, fix on the same branch, push, and re-check PR CI.
 
 Exit criteria:
 
 - Existing simulation still works.
 - A radio stub test can send bytes through encode/decode/router flow.
 - No LoRa chip dependency is introduced into the protocol core.
-- Latest phase commit has passing CI, or CI verification is explicitly pending.
+- Phase PR has passing CI checks before merge, or PR CI verification is explicitly pending.
 
 ---
 
@@ -124,12 +158,13 @@ Goal: reduce collision risk when multiple relays hear the same frame.
 
 Tasks:
 
-1. Add relay delay calculation.
-2. Add configurable base delay and jitter.
-3. Keep router decision pure if possible.
-4. Decide whether delay belongs to router output metadata or a future scheduler layer.
-5. Fetch CI result after implementation.
-6. If CI fails, inspect logs, fix, push, and re-check CI.
+1. Create a `phase-3-randomized-relay-delay` feature branch.
+2. Add relay delay calculation.
+3. Add configurable base delay and jitter.
+4. Keep router decision pure if possible.
+5. Decide whether delay belongs to router output metadata or a future scheduler layer.
+6. Open a PR and fetch PR CI result.
+7. If CI fails, inspect logs, fix on the same branch, push, and re-check PR CI.
 
 Possible design:
 
@@ -145,7 +180,7 @@ Exit criteria:
 - Relay forwarding can return a randomized delay.
 - Tests verify delay range.
 - Current simple router API remains backward compatible or is intentionally upgraded.
-- Latest phase commit has passing CI, or CI verification is explicitly pending.
+- Phase PR has passing CI checks before merge, or PR CI verification is explicitly pending.
 
 ---
 
@@ -155,13 +190,14 @@ Goal: move from single ACK demo to reusable endpoint reliability logic.
 
 Tasks:
 
-1. Add endpoint send session state.
-2. Track pending sequence number.
-3. Match incoming ACK by `src_id`, `dst_id`, `seq`, and `type`.
-4. Add retry counter.
-5. Add ACK timeout handling.
-6. Fetch CI result after implementation.
-7. If CI fails, inspect logs, fix, push, and re-check CI.
+1. Create a `phase-4-ack-retry-session` feature branch.
+2. Add endpoint send session state.
+3. Track pending sequence number.
+4. Match incoming ACK by `src_id`, `dst_id`, `seq`, and `type`.
+5. Add retry counter.
+6. Add ACK timeout handling.
+7. Open a PR and fetch PR CI result.
+8. If CI fails, inspect logs, fix on the same branch, push, and re-check PR CI.
 
 Out of scope:
 
@@ -174,7 +210,7 @@ Exit criteria:
 - Endpoint can resend confirmed DATA when ACK timeout occurs.
 - Endpoint stops retrying after max retry count.
 - Duplicate ACKs are ignored safely.
-- Latest phase commit has passing CI, or CI verification is explicitly pending.
+- Phase PR has passing CI checks before merge, or PR CI verification is explicitly pending.
 
 ---
 
@@ -191,13 +227,14 @@ Candidate hardware:
 
 Tasks:
 
-1. Choose the first hardware target.
-2. Implement radio send/receive binding.
-3. Provide a minimal endpoint firmware example.
-4. Provide a minimal relay firmware example.
-5. Provide a minimal base-station firmware example.
-6. Fetch CI result for host-buildable code.
-7. If CI fails, inspect logs, fix, push, and re-check CI.
+1. Create a `phase-5-real-lora-port` feature branch.
+2. Choose the first hardware target.
+3. Implement radio send/receive binding.
+4. Provide a minimal endpoint firmware example.
+5. Provide a minimal relay firmware example.
+6. Provide a minimal base-station firmware example.
+7. Open a PR and fetch PR CI result for host-buildable code.
+8. If CI fails, inspect logs, fix on the same branch, push, and re-check PR CI.
 
 Exit criteria:
 
@@ -205,7 +242,7 @@ Exit criteria:
 - Relay forwards DATA over real LoRa.
 - Base receives DATA and replies ACK.
 - Endpoint receives ACK.
-- Host-side CI still passes, or CI verification is explicitly pending.
+- Host-side PR CI passes, or PR CI verification is explicitly pending.
 
 ---
 
@@ -215,12 +252,13 @@ Goal: add minimal authenticity protection for non-test deployments.
 
 Tasks:
 
-1. Add MIC field design.
-2. Decide MIC size: 4, 8, or 16 bytes.
-3. Add frame counter or anti-replay strategy.
-4. Keep encryption optional.
-5. Fetch CI result after implementation.
-6. If CI fails, inspect logs, fix, push, and re-check CI.
+1. Create a `phase-6-security-baseline` feature branch.
+2. Add MIC field design.
+3. Decide MIC size: 4, 8, or 16 bytes.
+4. Add frame counter or anti-replay strategy.
+5. Keep encryption optional.
+6. Open a PR and fetch PR CI result.
+7. If CI fails, inspect logs, fix on the same branch, push, and re-check PR CI.
 
 Recommended direction:
 
@@ -232,7 +270,7 @@ Exit criteria:
 - Invalid MIC packets are rejected.
 - Fake ACK packets can be detected.
 - Security overhead is documented.
-- Latest phase commit has passing CI, or CI verification is explicitly pending.
+- Phase PR has passing CI checks before merge, or PR CI verification is explicitly pending.
 
 ---
 
@@ -249,18 +287,20 @@ Possible features:
 - relay health beacons
 - broadcast rate limiting
 
-CI feedback steps:
+Tasks:
 
-1. Fetch CI result after each feature.
-2. If CI fails, inspect logs, fix, push, and re-check CI.
-3. Do not start another advanced feature while CI is failing.
+1. Create a feature branch per advanced feature.
+2. Implement only one advanced feature per PR.
+3. Open a PR and fetch PR CI result.
+4. If CI fails, inspect logs, fix on the same branch, and re-check PR CI.
+5. Do not start another advanced feature while CI is failing.
 
 Exit criteria:
 
 - Each feature is optional.
 - MVP behavior remains simple and deterministic.
 - Airtime impact is documented.
-- Latest feature commit has passing CI, or CI verification is explicitly pending.
+- Each feature PR has passing CI checks before merge, or PR CI verification is explicitly pending.
 
 ---
 
@@ -269,12 +309,12 @@ Exit criteria:
 Immediate next steps:
 
 ```text
-1. Stabilize layered stack cleanup
-2. Add radio / port abstraction
-3. Fetch CI result and fix any failure
-4. Add randomized relay delay
-5. Add ACK retry logic
-6. Start real hardware port
+1. Convert ongoing work to PR-based phase flow
+2. Open PRs for future phase work instead of direct main commits
+3. Stabilize radio / port abstraction through PR CI
+4. Add randomized relay delay through PR CI
+5. Add ACK retry logic through PR CI
+6. Start real hardware port through PR CI
 ```
 
 Do not start dynamic routing, encryption, or mesh metrics until the radio abstraction and real RF loop are working.
