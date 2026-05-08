@@ -63,6 +63,17 @@ target_link_libraries(test_router
 
 add_test(NAME router_layer_strict_validation COMMAND test_router)
 
+add_executable(test_radio_port
+    tests/test_radio_port.c
+)
+
+target_link_libraries(test_radio_port
+    PRIVATE
+        lrp
+)
+
+add_test(NAME radio_port_abstraction_strict_validation COMMAND test_radio_port)
+
 add_executable(simulated_three_nodes
     examples/simulated_three_nodes/main.c
 )
