@@ -1,65 +1,91 @@
 # LRP
 
-LRP, LoRa Relay Protocol, is a lightweight relay protocol for private LoRa P2P networks.
-
-The current goal is to land a minimal, testable MVP before adding router, deduplication, radio drivers, or advanced mesh behavior.
+LRP, LoRa Relay Protocol, is a lightweight relay protocol stack for private LoRa P2P networks.
 
 LRP is **not LoRaWAN**. It is intended for private LoRa node / relay / base-station systems where the firmware controls both ends of the link.
 
+The current repository contains a complete MVP relay protocol core with frame handling, duplicate suppression, relay decision logic, in-memory relay simulation, sample usage, tests, and CI.
+
 ---
 
-## Current Status
-
-The project currently contains a working MVP relay core.
-
-Completed:
-
-- Protocol documentation
-- MVP implementation plan
-- Fixed binary frame format
-- Public API headers
-- Frame encode/decode implementation
-- CRC16-CCITT validation
-- Deduplication cache
-- Router decision layer
-- Three-node relay simulation
-- MVP basic usage sample
-- Strict unit tests
-- CMake build system
-- GitHub Actions CI
-
-Current implemented files:
+## Current MVP Status
 
 ```text
-include/lrp_type.h
-include/lrp.h
-src/lrp.c
-
-examples/simulated_three_nodes/main.c
-samples/mvp_basic_usage/main.c
-
-tests/test_frame.c
-tests/test_dedup.c
-tests/test_router.c
-
-CMakeLists.txt
-.github/workflows/ci.yml
+Frame Layer        DONE
+Dedup Layer        DONE
+Router Layer       DONE
+Relay Simulation   DONE
+Basic Sample       DONE
+CMake Build        DONE
+CI                 DONE
 ```
 
----
-
-## MVP Scope
-
-The first MVP proves this relay path:
+The MVP proves this path:
 
 ```text
 Endpoint A → Relay B → Base Station C → ACK → Relay B → Endpoint A
 ```
 
-The project now contains:
+---
 
-- a complete in-memory relay simulation
-- a minimal application usage sample
+## Software Architecture
+
+LRP now follows a layered protocol stack architecture:
+
+```text
++-----------------------------+
+| Application / Sample        |
++-----------------------------+
+| Router Decision Layer       |
++-----------------------------+
+| Dedup Layer                 |
++-----------------------------+
+| Frame Layer                 |
++-----------------------------+
+| Future Radio / Port Layer   |
++-----------------------------+
+```
+
+The current stack is synchronous, lightweight, and suitable for embedded C projects. It does not use dynamic memory, threads, message queues, or an RTOS.
+
+---
+
+## Layer Communication Model
+
+Layers communicate through:
+
+1. `lrp_frame_t` as the shared packet object.
+2. Function calls as layer boundaries.
+3. Return values as control signals.
+4. Router-owned state for deduplication.
+
+Receive flow:
+
+```text
+Radio bytes
+    ↓
+lrp_frame_decode()
+    ↓
+lrp_frame_t
+    ↓
+lrp_router_on_frame()
+    ↓
+DROP / CONSUME / FORWARD
+```
+
+Forward flow:
+
+```text
+FORWARD decision
+    ↓
+out frame with TTL - 1
+    ↓
+lrp_frame_encode()
+    ↓
+Radio bytes
+```
+
+Current radio bytes are simulated in memory. A real radio layer will be added later.
 
 ---
 
@@ -67,22 +93,36 @@ The project now contains:
 
 ### Frame Layer
 
-Implemented:
+Files:
 
-- fixed 13-byte header
+```text
+include/lrp_frame.h
+src/lrp_frame.c
+```
+
+Responsibilities:
+
+- fixed binary frame format
 - DATA frame
 - ACK frame
-- payload validation
+- payload length validation
 - CRC16-CCITT
 - strict decode validation
 - little-endian encoding
 
 ### Dedup Layer
 
-Implemented:
+Files:
 
-- duplicate suppression cache
-- timeout-based expiration
+```text
+include/lrp_dedup.h
+src/lrp_dedup.c
+```
+
+Responsibilities:
+
+- duplicate suppression
+- cache expiration
 - managed flooding protection
 
 Dedup key:
@@ -93,7 +133,23 @@ network_id + src_id + seq + type
 
 ### Router Decision Layer
 
-Implemented decisions:
+Files:
+
+```text
+include/lrp_router.h
+src/lrp_router.c
+```
+
+Responsibilities:
+
+- network filtering
+- duplicate filtering
+- destination matching
+- relay enable / disable
+- TTL check
+- TTL decrement on forwarding
+
+Router decisions:
 
 ```text
 DROP
@@ -101,13 +157,35 @@ CONSUME
 FORWARD
 ```
 
-Router supports:
+---
 
-- network filtering
-- duplicate filtering
-- relay enable/disable
-- TTL decrement on forwarding
-- destination matching
+## Public Headers
+
+```text
+include/lrp.h          umbrella public API
+include/lrp_type.h     shared constants and types
+include/lrp_frame.h    frame layer API
+include/lrp_dedup.h    dedup layer API
+include/lrp_router.h   router layer API
+```
+
+Users can include only:
+
+```c
+#include "lrp.h"
+```
+
+---
+
+## Source Layout
+
+```text
+src/lrp_frame.c
+src/lrp_dedup.c
+src/lrp_router.c
+```
+
+Each source file maps to one protocol stack layer.
 
 ---
 
@@ -128,6 +206,13 @@ Last 2      CRC16
 ```
 
 All multi-byte fields are encoded in little-endian format.
+
+Frame size:
+
+```text
+Minimum: 15 bytes
+Maximum: 79 bytes
+```
 
 ---
 
@@ -210,6 +295,44 @@ PASS: MVP basic usage sample
 
 ---
 
+## Repository Structure
+
+```text
+include/
+  lrp.h
+  lrp_type.h
+  lrp_frame.h
+  lrp_dedup.h
+  lrp_router.h
+
+src/
+  lrp_frame.c
+  lrp_dedup.c
+  lrp_router.c
+
+examples/
+  simulated_three_nodes/main.c
+
+samples/
+  mvp_basic_usage/main.c
+
+tests/
+  test_frame.c
+  test_dedup.c
+  test_router.c
+
+docs/
+  protocol.md
+  frame-format.md
+  relay-algorithm.md
+  mvp.md
+
+.github/workflows/
+  ci.yml
+```
+
+---
+
 ## Documentation
 
 Project documentation:
@@ -239,17 +362,26 @@ The following features are intentionally not implemented yet:
 
 ---
 
-## Current MVP Status
+## Next Architecture Step
 
-Current status:
+The next stack layer should be:
 
 ```text
-Frame Layer        DONE
-Dedup Layer        DONE
-Router Layer       DONE
-Relay Simulation   DONE
-Basic Sample       DONE
-CI                 DONE
+Radio / Port Layer
 ```
 
-The repository now contains a complete minimal relay protocol MVP core.
+Expected future structure:
+
+```text
+Application
+    ↓
+LRP Router
+    ↓
+LRP Dedup
+    ↓
+LRP Frame
+    ↓
+LRP Radio Abstraction
+    ↓
+SX1262 / SX1276 / LLCC68 Driver
+```
