@@ -13,6 +13,8 @@ add_library(lrp STATIC
     src/lrp_frame.c
     src/lrp_dedup.c
     src/lrp_router.c
+    src/lrp_port_stub.c
+    src/lrp_radio.c
 )
 
 target_include_directories(lrp
