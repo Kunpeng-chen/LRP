@@ -1,5 +1,7 @@
 #include "lrp_port.h"
 
+#include <stddef.h>
+
 uint32_t lrp_port_time_ms(
     const lrp_port_t *port
 )
