@@ -5,5 +5,7 @@
 #include "lrp_frame.h"
 #include "lrp_dedup.h"
 #include "lrp_router.h"
+#include "lrp_port.h"
+#include "lrp_radio.h"
 
 #endif /* LRP_H */
