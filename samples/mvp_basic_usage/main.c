@@ -30,6 +30,8 @@ static void init_router(
 {
     lrp_router_config_t config;
 
+    memset(&config, 0, sizeof(config));
+
     config.network_id = NETWORK_ID;
     config.node_id = node_id;
     config.relay_enabled = relay_enabled;

@@ -51,6 +51,11 @@ typedef enum {
 } lrp_decision_t;
 
 typedef struct {
+    lrp_decision_t decision;
+    uint32_t delay_ms;
+} lrp_router_result_t;
+
+typedef struct {
     uint8_t version;
     uint8_t flags;
     uint8_t type;
@@ -80,6 +85,8 @@ typedef struct {
     uint16_t network_id;
     uint16_t node_id;
     bool relay_enabled;
+    uint32_t relay_delay_base_ms;
+    uint32_t relay_delay_jitter_ms;
 } lrp_router_config_t;
 
 typedef struct {
